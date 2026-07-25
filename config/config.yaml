@@ -1,0 +1,40 @@
+# Environment-agnostic pipeline configuration.
+# Secrets (API keys, tokens) live in .env, NOT here.
+
+api:
+  finnhub:
+    base_url: "https://finnhub.io/api/v1"
+    endpoints:
+      quote: "/quote"
+      profile: "/stock/profile2"
+      # /stock/candle (historical OHLC) is paid-plan-only on Finnhub's free tier — not used.
+      # Historical time series is instead built incrementally from daily quote snapshots.
+    timeout_seconds: 10
+    max_retries: 3
+    retry_backoff_seconds: 2
+
+tickers:
+  # Universe of stocks pulled daily — kept small to stay well within free rate limits
+  - AAPL
+  - MSFT
+  - GOOGL
+  - AMZN
+  - TSLA
+  - NVDA
+  - META
+  - NFLX
+  - JPM
+  - V
+
+delta:
+  bronze_path: "/mnt/lakehouse/bronze/stock_data"
+  silver_path: "/mnt/lakehouse/silver/stock_data"
+  gold_path: "/mnt/lakehouse/gold/stock_analytics"
+  # Local fallback paths for running/testing outside Databricks (Community Edition uses DBFS instead)
+  local_bronze_path: "./data/bronze"
+  local_silver_path: "./data/silver"
+  local_gold_path: "./data/gold"
+
+pipeline:
+  partition_column: "ingestion_date"
+  watermark_column: "event_timestamp"
