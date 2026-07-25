@@ -34,3 +34,14 @@ def spark_path(config: dict, layer: str, entity: str = None) -> str:
 def fs_path(config: dict, layer: str, entity: str = None) -> Path:
     base = Path(_base_path(config, layer))
     return (base / entity) if entity else base
+
+
+def gold_table_ref(config: dict, entity: str) -> str:
+    """Gold is the BI-serving layer, so on Databricks it's registered as a real Unity Catalog
+    managed table (queryable from Power BI's Databricks connector, discoverable in Catalog
+    Explorer) rather than a path-based Delta table in a Volume — Volumes are for files, not
+    the tables a BI tool needs to browse. Locally there's no catalog, so it's just a path.
+    """
+    if is_databricks():
+        return f"workspace.default.{entity}"
+    return spark_path(config, "gold", entity)
