@@ -27,13 +27,12 @@ tickers:
   - V
 
 delta:
-  bronze_path: "/mnt/lakehouse/bronze/stock_data"
-  silver_path: "/mnt/lakehouse/silver/stock_data"
-  gold_path: "/mnt/lakehouse/gold/stock_analytics"
-  # Local fallback paths for running/testing outside Databricks (Community Edition uses DBFS instead)
-  local_bronze_path: "./data/bronze"
-  local_silver_path: "./data/silver"
-  local_gold_path: "./data/gold"
+  # DBFS's own built-in storage — no external cloud mount needed, works out of the box on
+  # Community Edition. Locally, etl.utils.paths ignores these and uses ./data/<layer> instead.
+  raw_path: "dbfs:/lakehouse/raw"
+  bronze_path: "dbfs:/lakehouse/bronze"
+  silver_path: "dbfs:/lakehouse/silver"
+  gold_path: "dbfs:/lakehouse/gold"
 
 pipeline:
   partition_column: "ingestion_date"

@@ -12,6 +12,7 @@ from delta.tables import DeltaTable
 from etl.load.spark_session import get_spark
 from etl.utils.config_loader import load_config
 from etl.utils.logger import get_logger
+from etl.utils.paths import spark_path
 from gold.aggregates import build_daily_market_summary, build_sector_summary, build_top_movers
 from gold.dimensions import build_dim_company, build_dim_date
 from gold.facts import build_fact_daily_quotes
@@ -44,22 +45,21 @@ def main(ingestion_date: str = None):
     config = load_config()
     project_root = Path(config["project_root"])
     ingestion_date = ingestion_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    gold_dir = project_root / "data" / "gold"
 
     spark = get_spark(project_root)
     logger.info("Gold ingestion starting for ingestion_date=%s", ingestion_date)
 
     try:
         # --- dim_date: deterministic reference data, safe to overwrite every run ---
-        dim_date_path = str(gold_dir / "dim_date")
+        dim_date_path = spark_path(config, "gold", "dim_date")
         dim_date_df = build_dim_date(spark)
         dim_date_df.write.format("delta").mode("overwrite").save(dim_date_path)
         logger.info("Refreshed dim_date at %s (%d rows)", dim_date_path, dim_date_df.count())
 
         # --- dim_company: Type 1 upsert keyed on the deterministic surrogate key ---
-        silver_profiles = spark.read.format("delta").load(str(project_root / "data" / "silver" / "profiles"))
+        silver_profiles = spark.read.format("delta").load(spark_path(config, "silver", "profiles"))
         dim_company_df = build_dim_company(silver_profiles)
-        dim_company_path = str(gold_dir / "dim_company")
+        dim_company_path = spark_path(config, "gold", "dim_company")
         _upsert(spark, dim_company_df, dim_company_path, key_columns=["sk_company"])
 
         # Re-read post-merge so downstream joins see the full current dimension, not just today's upserted rows.
@@ -67,7 +67,7 @@ def main(ingestion_date: str = None):
 
         # --- fact_daily_quotes ---
         silver_quotes = (
-            spark.read.format("delta").load(str(project_root / "data" / "silver" / "quotes"))
+            spark.read.format("delta").load(spark_path(config, "silver", "quotes"))
             .filter(f"ingestion_date = '{ingestion_date}'")
         )
         pre_join_count = silver_quotes.count()
@@ -79,24 +79,24 @@ def main(ingestion_date: str = None):
                 pre_join_count - post_join_count,
             )
 
-        fact_path = str(gold_dir / "fact_daily_quotes")
+        fact_path = spark_path(config, "gold", "fact_daily_quotes")
         _upsert(spark, fact_df, fact_path, key_columns=["sk_company", "sk_date"], partition_column="ingestion_date")
 
         fact_today = spark.read.format("delta").load(fact_path).filter(f"ingestion_date = '{ingestion_date}'")
 
         # --- Pre-aggregated marts ---
         summary_df = build_daily_market_summary(fact_today)
-        _upsert(spark, summary_df, str(gold_dir / "daily_market_summary"), key_columns=["ingestion_date"])
+        _upsert(spark, summary_df, spark_path(config, "gold", "daily_market_summary"), key_columns=["ingestion_date"])
 
         movers_df = build_top_movers(fact_today, dim_company_current, top_n=5)
         _upsert(
-            spark, movers_df, str(gold_dir / "top_movers"),
+            spark, movers_df, spark_path(config, "gold", "top_movers"),
             key_columns=["ingestion_date", "mover_type", "rank"],
         )
 
         sector_df = build_sector_summary(fact_today, dim_company_current)
         _upsert(
-            spark, sector_df, str(gold_dir / "sector_summary"),
+            spark, sector_df, spark_path(config, "gold", "sector_summary"),
             key_columns=["ingestion_date", "industry"],
         )
 
