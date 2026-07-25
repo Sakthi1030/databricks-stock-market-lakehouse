@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 01 — Extract
 # MAGIC Pulls quote + company profile data from Finnhub for every configured ticker and lands
-# MAGIC it as raw JSON.
+# MAGIC it as raw JSON in a Unity Catalog Volume.
 # MAGIC
 # MAGIC **Before running:** enter your Finnhub API key into the `finnhub_api_key` widget box
 # MAGIC that appears at the top of the notebook once the cell below runs. Databricks Free
