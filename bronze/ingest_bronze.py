@@ -47,7 +47,7 @@ def main(ingestion_date: str = None):
             continue
 
         df = read_json_raw(spark, raw_dir, schema)
-        if df.rdd.isEmpty():
+        if df.isEmpty():
             logger.warning("Raw data directory for %s on %s was empty. Skipping.", entity, ingestion_date)
             continue
 
