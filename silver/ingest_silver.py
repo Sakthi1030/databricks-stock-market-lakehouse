@@ -19,14 +19,15 @@ from etl.utils.data_quality import (
     run_checks,
 )
 from etl.utils.logger import get_logger
+from etl.utils.paths import spark_path
 from silver.merge import upsert_profiles_scd2, upsert_quotes_type1
 from silver.transform import clean_profiles, clean_quotes
 
 logger = get_logger(__name__)
 
 
-def _run_quotes(spark, project_root: Path, ingestion_date: str) -> None:
-    bronze_path = str(project_root / "data" / "bronze" / "quotes")
+def _run_quotes(spark, config: dict, ingestion_date: str) -> None:
+    bronze_path = spark_path(config, "bronze", "quotes")
     bronze_df = spark.read.format("delta").load(bronze_path).filter(f"ingestion_date = '{ingestion_date}'")
 
     silver_df = clean_quotes(bronze_df)
@@ -41,12 +42,12 @@ def _run_quotes(spark, project_root: Path, ingestion_date: str) -> None:
     if report.has_critical_failure:
         raise SystemExit(f"Critical DQ failures for silver_quotes: {report.failed}")
 
-    silver_path = str(project_root / "data" / "silver" / "quotes")
+    silver_path = spark_path(config, "silver", "quotes")
     upsert_quotes_type1(spark, silver_df, silver_path)
 
 
-def _run_profiles(spark, project_root: Path, ingestion_date: str) -> None:
-    bronze_path = str(project_root / "data" / "bronze" / "profiles")
+def _run_profiles(spark, config: dict, ingestion_date: str) -> None:
+    bronze_path = spark_path(config, "bronze", "profiles")
     bronze_df = spark.read.format("delta").load(bronze_path).filter(f"ingestion_date = '{ingestion_date}'")
 
     silver_df = clean_profiles(bronze_df)
@@ -59,7 +60,7 @@ def _run_profiles(spark, project_root: Path, ingestion_date: str) -> None:
     if report.has_critical_failure:
         raise SystemExit(f"Critical DQ failures for silver_profiles: {report.failed}")
 
-    silver_path = str(project_root / "data" / "silver" / "profiles")
+    silver_path = spark_path(config, "silver", "profiles")
     upsert_profiles_scd2(spark, silver_df, silver_path)
 
 
@@ -72,8 +73,8 @@ def main(ingestion_date: str = None):
     logger.info("Silver ingestion starting for ingestion_date=%s", ingestion_date)
 
     try:
-        _run_quotes(spark, project_root, ingestion_date)
-        _run_profiles(spark, project_root, ingestion_date)
+        _run_quotes(spark, config, ingestion_date)
+        _run_profiles(spark, config, ingestion_date)
     finally:
         spark.stop()
 

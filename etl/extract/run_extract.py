@@ -7,12 +7,13 @@ from etl.extract.finnhub_client import FinnhubClient
 from etl.utils.config_loader import load_config
 from etl.utils.exceptions import FinnhubAuthError
 from etl.utils.logger import get_logger
+from etl.utils.paths import fs_path
 
 logger = get_logger(__name__)
 
 
-def save_raw(records: list, entity: str, project_root: Path, ingestion_date: str) -> Path:
-    out_dir = project_root / "data" / "raw" / entity / f"ingestion_date={ingestion_date}"
+def save_raw(records: list, entity: str, config: dict, ingestion_date: str) -> Path:
+    out_dir = fs_path(config, "raw", entity) / f"ingestion_date={ingestion_date}"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{entity}_{datetime.now(timezone.utc).strftime('%H%M%S')}.json"
     with open(out_path, "w") as f:
@@ -44,11 +45,10 @@ def main():
         sys.exit(1)
 
     ingestion_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    project_root = Path(config["project_root"])
 
     for entity, records in results.items():
         if records:
-            save_raw(records, entity, project_root, ingestion_date)
+            save_raw(records, entity, config, ingestion_date)
         else:
             logger.warning("No records extracted for %s", entity)
 

@@ -2,14 +2,19 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 
+from etl.utils.paths import is_databricks
+
 
 def get_spark(project_root: Path, app_name: str = "lakehouse-pipeline") -> SparkSession:
-    """Build a local Spark session configured for Delta Lake.
+    """Return the right Spark session for wherever this code is running.
 
-    Locally this runs against the filesystem under data/spark-warehouse. In Databricks,
-    a Spark session already exists on the cluster (the global `spark` variable) — this
-    function is only needed for local/standalone execution, not inside a Databricks notebook.
+    On Databricks, a Spark session already exists on the cluster — building a second one
+    would be wrong, so we just reuse it via getOrCreate(). Locally, no such session exists,
+    so we build one configured for Delta Lake against a local warehouse directory.
     """
+    if is_databricks():
+        return SparkSession.builder.getOrCreate()
+
     from delta import configure_spark_with_delta_pip
 
     builder = (

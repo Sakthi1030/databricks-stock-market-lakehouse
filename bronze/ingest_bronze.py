@@ -14,6 +14,7 @@ from etl.load.delta_io import read_json_raw, write_delta_append
 from etl.load.spark_session import get_spark
 from etl.utils.config_loader import load_config
 from etl.utils.logger import get_logger
+from etl.utils.paths import fs_path, spark_path
 
 logger = get_logger(__name__)
 
@@ -40,7 +41,7 @@ def main(ingestion_date: str = None):
     logger.info("Bronze ingestion starting for ingestion_date=%s", ingestion_date)
 
     for entity, schema in ENTITIES.items():
-        raw_dir = project_root / "data" / "raw" / entity / f"ingestion_date={ingestion_date}"
+        raw_dir = fs_path(config, "raw", entity) / f"ingestion_date={ingestion_date}"
         if not raw_dir.exists():
             logger.warning("No raw data for %s on %s — run the Extract step first. Skipping.", entity, ingestion_date)
             continue
@@ -52,8 +53,7 @@ def main(ingestion_date: str = None):
 
         df = add_lineage_columns(df, ingestion_date)
 
-        # Local path for now; on Databricks this becomes config["delta"]["bronze_path"] + f"/{entity}" (DBFS).
-        bronze_path = str(project_root / "data" / "bronze" / entity)
+        bronze_path = spark_path(config, "bronze", entity)
         write_delta_append(df, bronze_path, partition_column)
 
     spark.stop()
