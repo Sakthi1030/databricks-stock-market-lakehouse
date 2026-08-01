@@ -1,0 +1,91 @@
+table top_movers
+	lineageTag: a4fb5f99-f6c1-4d69-bedf-81a3f3253c06
+
+	column ingestion_date
+		dataType: string
+		lineageTag: 12b8dbb6-1090-44d5-81df-ee3801d2296d
+		summarizeBy: none
+		sourceColumn: ingestion_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column mover_type
+		dataType: string
+		lineageTag: 483fb638-63ed-44ed-b8fd-c30395d25872
+		summarizeBy: none
+		sourceColumn: mover_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column rank
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f169651-4c03-4b68-b2ae-9780ee882cfb
+		summarizeBy: sum
+		sourceColumn: rank
+
+		annotation SummarizationSetBy = Automatic
+
+	column symbol
+		dataType: string
+		lineageTag: e52ad3db-ffb6-4fba-a874-caee5e0adebd
+		summarizeBy: none
+		sourceColumn: symbol
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: fd21a4a9-b8bc-4b74-af11-5f2ecb808114
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column industry
+		dataType: string
+		lineageTag: f07afcaa-04ca-422b-bce4-9d217d0e46b4
+		summarizeBy: none
+		sourceColumn: industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column pct_change
+		dataType: double
+		lineageTag: 80730221-8647-4014-b4b9-66e1840d74b7
+		summarizeBy: sum
+		sourceColumn: pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column current_price
+		dataType: double
+		lineageTag: 7d2bb8b7-2eec-4372-b6ab-e2c350d53fdd
+		summarizeBy: sum
+		sourceColumn: current_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sk_date = VALUE(SUBSTITUTE([ingestion_date], "-", ""))
+		dataType: int64
+		isHidden
+		lineageTag: 8a48e88c-b8c2-4aaf-a4af-51a5578d4254
+		summarizeBy: none
+
+	partition top_movers = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    top_movers_Table = default_Schema{[Name="top_movers",Kind="Table"]}[Data]
+				in
+				    top_movers_Table
+
+	annotation PBI_ResultType = Table
+

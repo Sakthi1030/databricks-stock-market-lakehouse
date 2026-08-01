@@ -1,0 +1,65 @@
+table sector_summary
+	lineageTag: 1219affb-cfbf-41d0-87cf-011fd4766b1a
+
+	column ingestion_date
+		dataType: string
+		lineageTag: 274cfd2c-7fa1-4609-ba02-fdb9521a57bd
+		summarizeBy: none
+		sourceColumn: ingestion_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column industry
+		dataType: string
+		lineageTag: 5a6b1958-fccd-496a-9a49-bdee5ddd966e
+		summarizeBy: none
+		sourceColumn: industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column num_companies
+		dataType: int64
+		formatString: 0
+		lineageTag: 635821e8-451b-49f7-8d93-71395eeb88be
+		summarizeBy: sum
+		sourceColumn: num_companies
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_pct_change
+		dataType: double
+		lineageTag: 549b4ac2-7b73-42ba-8490-b68cc5e12db8
+		summarizeBy: sum
+		sourceColumn: avg_pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column total_market_cap_musd
+		dataType: double
+		lineageTag: bb8de1f0-bfa5-4946-ab94-f3f4a840210f
+		summarizeBy: sum
+		sourceColumn: total_market_cap_musd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sk_date = VALUE(SUBSTITUTE([ingestion_date], "-", ""))
+		dataType: int64
+		isHidden
+		lineageTag: 8224b1b9-06a1-4565-a828-34eaf0ac8317
+		summarizeBy: none
+
+	partition sector_summary = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    sector_summary_Table = default_Schema{[Name="sector_summary",Kind="Table"]}[Data]
+				in
+				    sector_summary_Table
+

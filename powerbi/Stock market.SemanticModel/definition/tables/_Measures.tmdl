@@ -1,0 +1,80 @@
+table _Measures
+	lineageTag: 2d1d4c6e-7949-4216-9d13-539cd42f833d
+
+	measure 'Total Companies' = DISTINCTCOUNT(dim_company[sk_company])
+		formatString: #,0
+		displayFolder: KPIs
+		lineageTag: aa77606c-f3de-486d-bdc8-923b7380713b
+
+	measure Gainers = SUM(daily_market_summary[num_gainers])
+		formatString: #,0
+		displayFolder: KPIs
+		lineageTag: 37d1e78b-a8fe-470e-b6c0-5146e62c7de7
+
+	measure Losers = SUM(daily_market_summary[num_losers])
+		formatString: #,0
+		displayFolder: KPIs
+		lineageTag: 4e151d60-6acb-43a3-addd-2fe692be02bd
+
+	measure 'Avg Pct Change' = SUM(daily_market_summary[avg_pct_change])
+		formatString: 0.00"%"
+		displayFolder: KPIs
+		lineageTag: 2014a76e-ad9b-45fc-ada1-412a62dc55bc
+
+	measure 'Best Pct Change' = SUM(daily_market_summary[best_pct_change])
+		formatString: 0.00"%"
+		displayFolder: KPIs
+		lineageTag: 8d33d9ba-dc09-4946-809e-d6d2b3766efc
+
+	measure 'Worst Pct Change' = SUM(daily_market_summary[worst_pct_change])
+		formatString: 0.00"%"
+		displayFolder: KPIs
+		lineageTag: 2d955366-5137-43a6-ab59-0949adf34f95
+
+	measure 'Avg Daily Range' = SUM(daily_market_summary[avg_daily_range])
+		formatString: "$"#,0.00
+		displayFolder: KPIs
+		lineageTag: d0576bfb-fd75-4df1-9b26-db3695ee5546
+
+	measure 'Total Market Cap (M USD)' = SUM(dim_company[market_cap_musd])
+		formatString: "$"#,0
+		displayFolder: KPIs
+		lineageTag: b6411539-28f6-41b5-94ca-995215363c13
+
+	measure 'Avg Price' = AVERAGE(fact_daily_quotes[current_price])
+		formatString: "$"#,0.00
+		displayFolder: Trend
+		lineageTag: b9b81873-8557-44e2-9fc4-34cdab386763
+
+	measure 'Avg Pct Change (Fact)' = AVERAGE(fact_daily_quotes[pct_change])
+		formatString: 0.00"%"
+		displayFolder: Trend
+		lineageTag: 4dc39ab5-cce9-4b69-9841-7d31d8536f7d
+
+	measure 'Prior Day Avg Pct Change' = CALCULATE([Avg Pct Change (Fact)], DATEADD(dim_date[full_date], -1, DAY))
+		formatString: 0.00"%"
+		displayFolder: Trend\Time Intelligence
+		lineageTag: b73eb785-772c-4610-adea-51f1e5803b88
+
+	measure 'DoD Change (pct pts)' = [Avg Pct Change (Fact)] - [Prior Day Avg Pct Change]
+		formatString: 0.00"%"
+		displayFolder: Trend\Time Intelligence
+		lineageTag: bb25caa4-a955-4699-92ba-76fe2ef08f63
+
+	measure 'Selected Date Title' = "Market Summary — " & FORMAT(CALCULATE(MAX(dim_date[full_date]), fact_daily_quotes), "MMMM d, yyyy")
+		displayFolder: Titles
+		lineageTag: 16251378-c5d4-47b0-acf3-9a34300ac34f
+
+	measure 'Selected Company' = IF(HASONEVALUE(dim_company[name]), VALUES(dim_company[name]), "All Companies")
+		displayFolder: Titles
+		lineageTag: cdbbcd4b-ae08-46bf-83bc-85bfa57c2ab5
+
+	column _placeholder
+		lineageTag: c8187e61-7e80-4d11-9a7a-9389ecda831a
+		isNameInferred
+		sourceColumn: [_placeholder]
+
+	partition _Measures = calculated
+		mode: import
+		source = ROW("_placeholder", 0)
+

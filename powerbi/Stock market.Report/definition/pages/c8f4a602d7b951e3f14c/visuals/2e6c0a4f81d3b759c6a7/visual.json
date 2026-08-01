@@ -1,0 +1,244 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "2e6c0a4f81d3b759c6a7",
+  "position": {
+    "x": 20,
+    "y": 380,
+    "z": 1,
+    "height": 320,
+    "width": 1240,
+    "tabOrder": 1
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "top_movers"
+                    }
+                  },
+                  "Property": "mover_type"
+                }
+              },
+              "queryRef": "top_movers.mover_type",
+              "nativeQueryRef": "mover_type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "top_movers"
+                    }
+                  },
+                  "Property": "symbol"
+                }
+              },
+              "queryRef": "top_movers.symbol",
+              "nativeQueryRef": "symbol"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "top_movers"
+                    }
+                  },
+                  "Property": "name"
+                }
+              },
+              "queryRef": "top_movers.name",
+              "nativeQueryRef": "name"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "top_movers"
+                        }
+                      },
+                      "Property": "rank"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(top_movers.rank)",
+              "nativeQueryRef": "Sum of rank"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "top_movers"
+                    }
+                  },
+                  "Property": "ingestion_date"
+                }
+              },
+              "queryRef": "top_movers.ingestion_date",
+              "nativeQueryRef": "ingestion_date"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "top_movers"
+                    }
+                  },
+                  "Property": "industry"
+                }
+              },
+              "queryRef": "top_movers.industry",
+              "nativeQueryRef": "industry"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "top_movers"
+                        }
+                      },
+                      "Property": "current_price"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(top_movers.current_price)",
+              "nativeQueryRef": "Sum of current_price"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "d39c6c708be149d00660",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "top_movers"
+              }
+            },
+            "Property": "mover_type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ab19013b8d01626da627",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "top_movers"
+              }
+            },
+            "Property": "symbol"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "dda1a9241e300454142d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "top_movers"
+              }
+            },
+            "Property": "name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "06bef5e5a5598b27c2d2",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "top_movers"
+                  }
+                },
+                "Property": "rank"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a1da1d6f63e0dc6c99ae",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "top_movers"
+              }
+            },
+            "Property": "ingestion_date"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "fbf6ea26d6570017e47a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "top_movers"
+              }
+            },
+            "Property": "industry"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "56c96bfcd41d2708dca2",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "top_movers"
+                  }
+                },
+                "Property": "current_price"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+table dim_company
+	lineageTag: 54b25d04-4ebf-468b-9e9d-67101cf194d8
+
+	column sk_company
+		dataType: int64
+		formatString: 0
+		lineageTag: e97e2d4f-742f-45cb-a4df-583eeb1aea68
+		summarizeBy: none
+		sourceColumn: sk_company
+
+		annotation SummarizationSetBy = Automatic
+
+	column symbol
+		dataType: string
+		lineageTag: 21224a87-c5a9-447a-bb6a-1ff490d08011
+		summarizeBy: none
+		sourceColumn: symbol
+
+		annotation SummarizationSetBy = Automatic
+
+	column ticker
+		dataType: string
+		lineageTag: 63b0039e-6c97-4ce0-a1b0-aea2bbdf9aad
+		summarizeBy: none
+		sourceColumn: ticker
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: 4c46e0f8-2061-4093-9605-93ea7c3784a5
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column exchange
+		dataType: string
+		lineageTag: 21eaf1b1-48af-4a65-b6f4-f253c7d308f3
+		summarizeBy: none
+		sourceColumn: exchange
+
+		annotation SummarizationSetBy = Automatic
+
+	column country
+		dataType: string
+		lineageTag: 7dbfa68c-7c52-43e3-8325-27b2452bc2ef
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = Automatic
+
+	column currency
+		dataType: string
+		lineageTag: 32ab4020-41da-4cc9-ba79-21b2da1314de
+		summarizeBy: none
+		sourceColumn: currency
+
+		annotation SummarizationSetBy = Automatic
+
+	column industry
+		dataType: string
+		lineageTag: ae396521-febf-44a0-aa12-d82a64755cac
+		summarizeBy: none
+		sourceColumn: industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column market_cap_musd
+		dataType: double
+		lineageTag: 9dcc94c2-2fc6-4feb-95a0-397fd79cc7a1
+		summarizeBy: sum
+		sourceColumn: market_cap_musd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column shareOutstanding
+		dataType: double
+		lineageTag: ff254159-655a-48f2-a8d0-3e87a1a36c31
+		summarizeBy: sum
+		sourceColumn: shareOutstanding
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ipo
+		dataType: string
+		lineageTag: b5c368a1-a872-4bdf-aa48-47c02f8ee499
+		summarizeBy: none
+		sourceColumn: ipo
+
+		annotation SummarizationSetBy = Automatic
+
+	column weburl
+		dataType: string
+		lineageTag: af982df9-ab5f-46b5-a180-a41f6c50e307
+		summarizeBy: none
+		sourceColumn: weburl
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_start_date
+		dataType: string
+		lineageTag: 5ed31473-f688-453e-b6e0-8e3877dc415c
+		summarizeBy: none
+		sourceColumn: effective_start_date
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_company = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    dim_company_Table = default_Schema{[Name="dim_company",Kind="Table"]}[Data]
+				in
+				    dim_company_Table
+

@@ -1,0 +1,137 @@
+table fact_daily_quotes
+	lineageTag: dfe0955a-5ee6-4a13-a0df-aab0f09bcb37
+
+	column sk_company
+		dataType: int64
+		formatString: 0
+		lineageTag: a2da56f3-2924-4f58-afc2-fb599a526dbf
+		summarizeBy: none
+		sourceColumn: sk_company
+
+		annotation SummarizationSetBy = Automatic
+
+	column sk_date
+		dataType: int64
+		formatString: 0
+		lineageTag: 1bea2937-e1b4-430d-a160-82f207b0cfc1
+		summarizeBy: none
+		sourceColumn: sk_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column symbol
+		dataType: string
+		lineageTag: d0661251-c171-486e-aed2-3eb4004e3d67
+		summarizeBy: none
+		sourceColumn: symbol
+
+		annotation SummarizationSetBy = Automatic
+
+	column ingestion_date
+		dataType: string
+		lineageTag: 02f9be0d-6e35-4961-a4b3-c0f4f8ec7278
+		summarizeBy: none
+		sourceColumn: ingestion_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column quote_timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: ed7ea79c-7daf-4ade-9ec0-af6c7574b00c
+		summarizeBy: none
+		sourceColumn: quote_timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column current_price
+		dataType: double
+		lineageTag: 16c1b15c-01b8-4f8b-b28a-7751bc265bbb
+		summarizeBy: sum
+		sourceColumn: current_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column price_change
+		dataType: double
+		lineageTag: bfb1c43e-59a7-4778-9a64-1fa88f2b3129
+		summarizeBy: sum
+		sourceColumn: price_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column pct_change
+		dataType: double
+		lineageTag: 55de70f0-3467-42a4-b907-01df43c39228
+		summarizeBy: sum
+		sourceColumn: pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column day_high
+		dataType: double
+		lineageTag: 8ec2594d-84a8-4e23-8c33-8540d4e8188f
+		summarizeBy: sum
+		sourceColumn: day_high
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column day_low
+		dataType: double
+		lineageTag: 74b7bd70-fbc3-44e6-87cd-04078b92edd9
+		summarizeBy: sum
+		sourceColumn: day_low
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column day_open
+		dataType: double
+		lineageTag: fa606782-f3bd-4d99-9063-7ae6df7ec342
+		summarizeBy: sum
+		sourceColumn: day_open
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column previous_close
+		dataType: double
+		lineageTag: 4060f167-92f6-4694-a782-178c098b65ee
+		summarizeBy: sum
+		sourceColumn: previous_close
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column daily_range
+		dataType: double
+		lineageTag: ba6eaaa9-9bdc-4f8e-a4b4-bd9b1d7afe76
+		summarizeBy: sum
+		sourceColumn: daily_range
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_daily_quotes = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    fact_daily_quotes_Table = default_Schema{[Name="fact_daily_quotes",Kind="Table"]}[Data]
+				in
+				    fact_daily_quotes_Table
+

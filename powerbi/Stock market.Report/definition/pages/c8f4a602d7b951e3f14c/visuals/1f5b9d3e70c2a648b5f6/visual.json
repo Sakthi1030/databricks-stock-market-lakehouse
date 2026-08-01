@@ -1,0 +1,122 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "1f5b9d3e70c2a648b5f6",
+  "position": {
+    "x": 20,
+    "y": 20,
+    "z": 0,
+    "height": 340,
+    "width": 1240,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "sector_summary"
+                    }
+                  },
+                  "Property": "industry"
+                }
+              },
+              "queryRef": "sector_summary.industry",
+              "nativeQueryRef": "industry",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "sector_summary"
+                        }
+                      },
+                      "Property": "avg_pct_change"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(sector_summary.avg_pct_change)",
+              "nativeQueryRef": "Avg Pct Change by Sector"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Aggregation": {
+                "Expression": {
+                  "Column": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "sector_summary"
+                      }
+                    },
+                    "Property": "avg_pct_change"
+                  }
+                },
+                "Function": 0
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "3d7e1b5f92a4c860d7b8",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "sector_summary"
+              }
+            },
+            "Property": "industry"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "4e8f2c6a03b5d971e8c9",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "sector_summary"
+                  }
+                },
+                "Property": "avg_pct_change"
+              }
+            },
+            "Function": 0
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+table daily_market_summary
+	lineageTag: 55a85e32-a1f2-40ef-b290-0fb7b236c39b
+
+	column ingestion_date
+		dataType: string
+		lineageTag: dde4ad3d-5a86-435d-8f00-70855957eb7e
+		summarizeBy: none
+		sourceColumn: ingestion_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column num_companies
+		dataType: int64
+		formatString: 0
+		lineageTag: dbbaf114-6ac3-42b6-89c2-795732c17684
+		summarizeBy: sum
+		sourceColumn: num_companies
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_pct_change
+		dataType: double
+		lineageTag: d3553ffe-e540-42f7-b18f-4d522f7e6fd3
+		summarizeBy: sum
+		sourceColumn: avg_pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column num_gainers
+		dataType: int64
+		formatString: 0
+		lineageTag: acfb0eea-9b9c-48f8-8a14-1e6cad7ee71b
+		summarizeBy: sum
+		sourceColumn: num_gainers
+
+		annotation SummarizationSetBy = Automatic
+
+	column num_losers
+		dataType: int64
+		formatString: 0
+		lineageTag: 23f6237d-ce92-48e8-9f6d-97d57baa5d12
+		summarizeBy: sum
+		sourceColumn: num_losers
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_daily_range
+		dataType: double
+		lineageTag: b683a254-c28f-4cdd-9826-05be3b434f34
+		summarizeBy: sum
+		sourceColumn: avg_daily_range
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column best_pct_change
+		dataType: double
+		lineageTag: eb704d82-bc6b-4e9e-8771-cd098b04de99
+		summarizeBy: sum
+		sourceColumn: best_pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column worst_pct_change
+		dataType: double
+		lineageTag: 6e92674c-5fe2-45d3-b1ac-cb540268321f
+		summarizeBy: sum
+		sourceColumn: worst_pct_change
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sk_date = VALUE(SUBSTITUTE([ingestion_date], "-", ""))
+		dataType: int64
+		isHidden
+		lineageTag: 923238db-9c0b-4596-97da-953a4f91cadb
+		summarizeBy: none
+
+	partition daily_market_summary = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    daily_market_summary_Table = default_Schema{[Name="daily_market_summary",Kind="Table"]}[Data]
+				in
+				    daily_market_summary_Table
+

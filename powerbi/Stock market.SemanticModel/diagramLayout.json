@@ -1,0 +1,113 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 50,
+            "y": 469.5669376838735
+          },
+          "nodeIndex": "daily_market_summary",
+          "nodeLineageTag": "55a85e32-a1f2-40ef-b290-0fb7b236c39b",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 618.21926915481629,
+            "y": -50
+          },
+          "nodeIndex": "dim_company",
+          "nodeLineageTag": "54b25d04-4ebf-468b-9e9d-67101cf194d8",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 902.38121260324738,
+            "y": 850.65100501592656
+          },
+          "nodeIndex": "dim_date",
+          "nodeLineageTag": "ba0a2328-2310-48ce-bfc6-76d20cb9c259",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 618.23141351708034,
+            "y": 505.69960422551463
+          },
+          "nodeIndex": "fact_daily_quotes",
+          "nodeLineageTag": "dfe0955a-5ee6-4a13-a0df-aab0f09bcb37",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 70.054330663613115,
+            "y": -14.24132759695658
+          },
+          "nodeIndex": "sector_summary",
+          "nodeLineageTag": "1219affb-cfbf-41d0-87cf-011fd4766b1a",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 334.11343128504853,
+            "y": 235.88225022623328
+          },
+          "nodeIndex": "top_movers",
+          "nodeLineageTag": "a4fb5f99-f6c1-4d69-bedf-81a3f3253c06",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1136.3812126032474,
+            "y": 500.32550250796328
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "2d1d4c6e-7949-4216-9d13-539cd42f833d",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

@@ -28,8 +28,10 @@ react/.env
 .vscode/
 .idea/
 
-# Power BI
+# Power BI — machine-local cache/settings, not source (Microsoft's own PBIP guidance)
 powerbi/*.pbix.bak
+**/.pbi/
+**/*.abf
 
 # Logs
 logs/
