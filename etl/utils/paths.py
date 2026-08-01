@@ -23,7 +23,10 @@ def is_databricks() -> bool:
 def _base_path(config: dict, layer: str) -> str:
     if is_databricks():
         return config["delta"][f"{layer}_path"]
-    return str(Path(config["project_root"]) / "data" / layer)
+    # Spark/Hadoop paths are URI-style and always forward-slash, regardless of host OS —
+    # .as_posix() keeps this consistent with the entity-appending below instead of mixing
+    # Windows backslashes with a hardcoded "/" separator.
+    return (Path(config["project_root"]) / "data" / layer).as_posix()
 
 
 def spark_path(config: dict, layer: str, entity: str = None) -> str:
