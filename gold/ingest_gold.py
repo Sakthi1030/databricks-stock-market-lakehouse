@@ -53,6 +53,32 @@ def _write_new(df, ref: str, partition_column: str = None) -> None:
         writer.save(ref)
 
 
+def _append(df, ref: str) -> None:
+    if is_databricks():
+        df.write.format("delta").mode("append").saveAsTable(ref)
+    else:
+        df.write.format("delta").mode("append").save(ref)
+
+
+def _replace_date_partition(spark, df, ref: str, ingestion_date: str, date_column: str = "ingestion_date") -> None:
+    """Delete-then-insert for marts that are fully recomputed from Silver every run (not
+    naturally incremental facts). A row-level MERGE only touches rows present in the new
+    source — if today's recomputed set is *smaller* than an earlier run's for the same date
+    (e.g. fewer losers on a later intraday snapshot), the extra old rows never get deleted and
+    linger as stale data. Delete-then-insert guarantees the partition always matches exactly
+    what was just computed, with no leftover rows possible.
+    """
+    if not _exists(spark, ref):
+        _write_new(df, ref)
+        logger.info("Initialized Gold table %s with %d rows", ref, df.count())
+        return
+
+    target = _delta_table(spark, ref)
+    target.delete(f"{date_column} = '{ingestion_date}'")
+    _append(df, ref)
+    logger.info("Replaced %s rows for %s=%s in Gold table %s", df.count(), date_column, ingestion_date, ref)
+
+
 def _upsert(spark, df, ref: str, key_columns: list, partition_column: str = None) -> None:
     if not _exists(spark, ref):
         _write_new(df, ref, partition_column)
@@ -114,21 +140,16 @@ def main(ingestion_date: str = None):
 
         fact_today = _read(spark, fact_ref).filter(f"ingestion_date = '{ingestion_date}'")
 
-        # --- Pre-aggregated marts ---
+        # --- Pre-aggregated marts: fully recomputed each run, so delete-then-replace the
+        # day's partition rather than merge — see _replace_date_partition for why.
         summary_df = build_daily_market_summary(fact_today)
-        _upsert(spark, summary_df, gold_table_ref(config, "daily_market_summary"), key_columns=["ingestion_date"])
+        _replace_date_partition(spark, summary_df, gold_table_ref(config, "daily_market_summary"), ingestion_date)
 
         movers_df = build_top_movers(fact_today, dim_company_current, top_n=5)
-        _upsert(
-            spark, movers_df, gold_table_ref(config, "top_movers"),
-            key_columns=["ingestion_date", "mover_type", "rank"],
-        )
+        _replace_date_partition(spark, movers_df, gold_table_ref(config, "top_movers"), ingestion_date)
 
         sector_df = build_sector_summary(fact_today, dim_company_current)
-        _upsert(
-            spark, sector_df, gold_table_ref(config, "sector_summary"),
-            key_columns=["ingestion_date", "industry"],
-        )
+        _replace_date_partition(spark, sector_df, gold_table_ref(config, "sector_summary"), ingestion_date)
 
     finally:
         spark.stop()
