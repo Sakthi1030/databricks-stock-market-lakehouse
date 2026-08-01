@@ -20,6 +20,8 @@ jobs:
       - name: Compile-check all Python files
         run: python -m compileall -q bronze silver gold etl backend
 
+  # Only the API's own tests + the pure-Python parts of etl.utils — deliberately excludes
+  # anything needing a SparkSession, so this stays fast with a minimal (non-PySpark) install.
   backend-tests:
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +33,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt pytest==8.2.2 httpx==0.28.1
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/backend/ tests/etl/test_paths.py -v
+
+  # Silver/Gold transform logic, run against a real local SparkSession — needs Java and the
+  # full (heavier) requirements.txt, kept as its own job so backend-tests stays fast.
+  pyspark-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest tests/etl/test_data_quality.py tests/silver/ tests/gold/ -v
 
   frontend:
     runs-on: ubuntu-latest
@@ -49,5 +70,7 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Unit tests
+        run: npm run test
       - name: Type-check and build
         run: npm run build
