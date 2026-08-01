@@ -3,19 +3,28 @@
 Reads directly from the same Databricks SQL Warehouse Power BI connects to — Gold is the
 single source of truth for both, so the two never drift out of sync with each other.
 """
+import os
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.db import run_query
 from backend.schemas import Company, DailyMarketSummary, Quote, SectorSummary, TopMover
 
+load_dotenv()
+
 app = FastAPI(title="Stock Market Lakehouse API", version="1.0.0")
+
+# ALLOWED_ORIGINS is a comma-separated list set per-environment (e.g. the deployed Vercel URL
+# in production) — defaults to local dev ports so nothing extra is needed to run this locally.
+default_origins = "http://localhost:5173,http://localhost:3000"
+allowed_origins = os.environ.get("ALLOWED_ORIGINS", default_origins).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_methods=["GET"],
     allow_headers=["*"],
 )
