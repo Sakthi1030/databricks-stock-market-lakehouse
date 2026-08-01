@@ -1,0 +1,115 @@
+table dim_date
+	lineageTag: ba0a2328-2310-48ce-bfc6-76d20cb9c259
+	dataCategory: Time
+
+	column sk_date
+		dataType: int64
+		formatString: 0
+		lineageTag: 7c2bb09d-b5fd-4f98-96cf-3f8972ca32b7
+		summarizeBy: none
+		sourceColumn: sk_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column full_date
+		dataType: dateTime
+		isUnique
+		formatString: Long Date
+		lineageTag: 27ab01a2-8287-4d7b-8cb8-d0372c325780
+		summarizeBy: none
+		sourceColumn: full_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 8955885d-847f-4f2b-ad97-a3750a896b28
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: ed4f097f-7696-4a4d-a5df-c9ff0c2d91e8
+		summarizeBy: sum
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: int64
+		formatString: 0
+		lineageTag: 6a5b04ed-4242-4313-97ed-1ecd9660a531
+		summarizeBy: sum
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: 3cb0cf9c-eb95-4470-9de8-1e79f4308dbe
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_month
+		dataType: int64
+		formatString: 0
+		lineageTag: a67c2794-33da-4457-b94a-4ba0522be056
+		summarizeBy: sum
+		sourceColumn: day_of_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_week
+		dataType: int64
+		formatString: 0
+		lineageTag: e48393c0-7061-41d2-9b90-37e4f5a61dec
+		summarizeBy: sum
+		sourceColumn: day_of_week
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_name
+		dataType: string
+		lineageTag: 52ede34b-953f-4813-a615-32278d96bd36
+		summarizeBy: none
+		sourceColumn: day_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_of_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 6f4426bf-9aec-492d-aa16-1e88a3bf9a9a
+		summarizeBy: sum
+		sourceColumn: week_of_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_weekend
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 87238658-cc6f-4745-961e-d810eb4d35aa
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = DatabricksMultiCloud.Catalogs("dbc-7dd5c718-6b0a.cloud.databricks.com", "/sql/1.0/warehouses/df2598dc9181bad8", [Catalog=null, Database=null, QueryTags=null, EnableAutomaticProxyDiscovery=null, Implementation="2.0", Protocol=null]),
+				    workspace_Database = Source{[Name="workspace",Kind="Database"]}[Data],
+				    default_Schema = workspace_Database{[Name="default",Kind="Schema"]}[Data],
+				    dim_date_Table = default_Schema{[Name="dim_date",Kind="Table"]}[Data]
+				in
+				    dim_date_Table
+

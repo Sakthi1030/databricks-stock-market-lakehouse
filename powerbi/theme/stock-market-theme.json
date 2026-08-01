@@ -1,0 +1,54 @@
+{
+  "name": "Stock Market Lakehouse",
+  "dataColors": [
+    "#2563EB",
+    "#16A34A",
+    "#DC2626",
+    "#F59E0B",
+    "#7C3AED",
+    "#0891B2",
+    "#DB2777",
+    "#65A30D"
+  ],
+  "background": "#F5F6F8",
+  "foreground": "#1E293B",
+  "tableAccent": "#2563EB",
+  "good": "#16A34A",
+  "neutral": "#F59E0B",
+  "bad": "#DC2626",
+  "maximum": "#2563EB",
+  "center": "#F59E0B",
+  "minimum": "#DC2626",
+  "textClasses": {
+    "callout": {
+      "fontSize": 32,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#2563EB"
+    },
+    "title": {
+      "fontSize": 13,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1E293B"
+    },
+    "label": {
+      "fontSize": 10,
+      "fontFace": "Segoe UI",
+      "color": "#64748B"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }],
+        "border": [{ "show": true, "radius": 12, "color": { "solid": { "color": "#E2E8F0" } } }],
+        "shadow": [{ "show": true, "position": "Outer", "color": { "solid": { "color": "#000000" } }, "transparency": 92, "size": 12, "blur": 12 }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "color": { "solid": { "color": "#2563EB" } }, "fontSize": 18 }],
+        "categoryLabels": [{ "color": { "solid": { "color": "#64748B" } }, "fontSize": 10 }]
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+relationship AutoDetected_d337c1a3-d8c8-46b4-92ae-6cf01d96848a
+	fromColumn: fact_daily_quotes.sk_date
+	toColumn: dim_date.sk_date
+
