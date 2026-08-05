@@ -7,6 +7,8 @@ const NAV_LINKS = [
   { to: "/companies", label: "Companies" },
   { to: "/movers", label: "Top Movers" },
   { to: "/sectors", label: "Sectors" },
+  { to: "/watchlist", label: "Watchlist" },
+  { to: "/compare", label: "Compare" },
 ];
 
 function SunIcon() {

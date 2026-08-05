@@ -5,6 +5,8 @@ import { Companies } from "./pages/Companies";
 import { CompanyDetail } from "./pages/CompanyDetail";
 import { Movers } from "./pages/Movers";
 import { Sectors } from "./pages/Sectors";
+import { Watchlist } from "./pages/Watchlist";
+import { Compare } from "./pages/Compare";
 import { NotFound } from "./pages/NotFound";
 
 export function App() {
@@ -17,6 +19,8 @@ export function App() {
           <Route path="/companies/:symbol" element={<CompanyDetail />} />
           <Route path="/movers" element={<Movers />} />
           <Route path="/sectors" element={<Sectors />} />
+          <Route path="/watchlist" element={<Watchlist />} />
+          <Route path="/compare" element={<Compare />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
