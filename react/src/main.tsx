@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import { App } from "./App.tsx";
 import { ThemeProvider } from "./hooks/useTheme.tsx";
+import { WatchlistProvider } from "./hooks/useWatchlist.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 const queryClient = new QueryClient({
@@ -20,7 +21,9 @@ createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <App />
+          <WatchlistProvider>
+            <App />
+          </WatchlistProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>

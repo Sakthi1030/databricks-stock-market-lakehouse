@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLatestSummary, useMovers } from "../api/queries";
 import { StatCard } from "../components/StatCard";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ErrorState } from "../components/ErrorState";
+import { AutoRefreshBar } from "../components/AutoRefreshBar";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString(undefined, {
@@ -14,7 +16,8 @@ function formatDate(dateStr: string) {
 }
 
 export function Dashboard() {
-  const summary = useLatestSummary();
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const summary = useLatestSummary({ refetchInterval: autoRefresh ? 60_000 : false });
   const gainers = useMovers("gainer");
   const losers = useMovers("loser");
 
@@ -31,9 +34,18 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Executive Summary</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">{formatDate(data.ingestion_date)}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Executive Summary</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{formatDate(data.ingestion_date)}</p>
+        </div>
+        <AutoRefreshBar
+          lastUpdated={summary.dataUpdatedAt}
+          isFetching={summary.isFetching}
+          onRefresh={() => summary.refetch()}
+          autoRefresh={autoRefresh}
+          onAutoRefreshChange={setAutoRefresh}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

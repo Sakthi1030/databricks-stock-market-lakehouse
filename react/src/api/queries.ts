@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import type {
   Company,
@@ -43,10 +43,26 @@ export function useQuoteHistory(symbol: string, days = 30) {
   });
 }
 
-export function useLatestSummary() {
+// For a fixed, known symbol, useQuoteHistory (a plain useQuery) is the right tool. Here the
+// *number* of symbols varies at runtime (however many the user has selected to compare) —
+// hooks can't be called in a loop for a variable-length list, so useQueries is the
+// purpose-built TanStack Query API for exactly this "N queries where N is dynamic" case.
+export function useMultipleQuoteHistories(symbols: string[], days = 30) {
+  return useQueries({
+    queries: symbols.map((symbol) => ({
+      queryKey: queryKeys.quoteHistory(symbol, days),
+      queryFn: async () =>
+        (await apiClient.get<Quote[]>("/api/quotes/history", { params: { symbol, days } })).data,
+      enabled: Boolean(symbol),
+    })),
+  });
+}
+
+export function useLatestSummary(options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: queryKeys.latestSummary,
     queryFn: async () => (await apiClient.get<DailyMarketSummary>("/api/summary/latest")).data,
+    refetchInterval: options?.refetchInterval ?? false,
   });
 }
 
