@@ -1,15 +1,16 @@
 import { motion } from "framer-motion";
 import { Activity, Newspaper, Radar as RadarIcon, ScanSearch, Target, Telescope } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToday } from "../api/queries";
 import type { NewsSource, TodayRun } from "../api/types";
 import { EChart } from "../components/charts/EChart";
-import { AiBrief, CandidatesGrid, IndexStrip, PickCard } from "../components/radar";
+import { AiBrief, CandidatesGrid, IndexStrip, MarketLight, PickCard, TickerTape } from "../components/radar";
 import { Card, EmptyState, ErrorState, PageSkeleton } from "../components/ui";
-import { KpiCard } from "../components/visuals";
+import { KpiCard, MiniStack, SlotDots, VersusBars } from "../components/visuals";
 import { useChartColors } from "../hooks/useChartColors";
 import { catalystLabel, istDate, istTime, SOURCE_LABEL } from "../utils/format";
+import { marketMood } from "../utils/mood";
 
 export function RadarPage() {
   const today = useToday();
@@ -20,36 +21,99 @@ export function RadarPage() {
 }
 
 function Radar({ run }: { run: TodayRun }) {
+  const navigate = useNavigate();
   const picks = run.candidates.filter((c) => c.is_pick);
   const tr = run.track_record;
+  const mood = marketMood(run.indices["NIFTY 50"], run.indices["NIFTY Bank"]);
+  const [flash, setFlash] = useState(false);
+  const c = useChartColors();
+
+  // "Picks today" jumps to the five picks and makes them pulse once so the eye lands there.
+  const showPicks = () => {
+    document.getElementById("picks")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFlash(false);
+    requestAnimationFrame(() => setFlash(true));
+    window.setTimeout(() => setFlash(false), 3000);
+  };
+  const showCandidates = () => document.getElementById("candidates")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="space-y-5">
+      <TickerTape indices={run.indices} candidates={run.candidates} />
+
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border border-line bg-panel p-5 shadow-card sm:p-6">
+        <div className="grid-paper pointer-events-none absolute inset-0" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 opacity-60">
           <div className="radar-sweep absolute inset-0 rounded-full" />
           <div className="absolute inset-8 rounded-full border border-line" />
           <div className="absolute inset-20 rounded-full border border-line" />
         </div>
-        <div className="relative grid gap-5 lg:grid-cols-[1fr_minmax(0,460px)] lg:items-end">
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Today's radar</div>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{istDate(run.market_date)}</h1>
-            <p className="mt-1.5 max-w-xl text-sm text-ink-2">
-              Stocks with fresh positive news, scored at <b className="text-ink">{istTime(run.run_at)}</b> for a next-day
-              move of <b className="text-up">+{run.target_pct}%</b>. Buy in delivery before the close, sell at the target.
-            </p>
+        <div className="relative grid gap-5 lg:grid-cols-[1fr_minmax(0,440px)]">
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col justify-between gap-4">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Today's radar</div>
+              <h1 className="mt-1 text-3xl font-bold text-ink sm:text-4xl">{istDate(run.market_date)}</h1>
+              <p className="mt-1.5 max-w-xl text-sm text-ink-2">
+                Stocks with fresh positive news, scored at <b className="text-ink">{istTime(run.run_at)}</b> for a next-day
+                move of <b className="text-up">+{run.target_pct}%</b>. Buy in delivery before the close, sell at the target.
+              </p>
+            </div>
+            <IndexStrip indices={run.indices} />
           </motion.div>
-          <IndexStrip indices={run.indices} />
+          {mood && <MarketLight mood={mood} />}
         </div>
       </section>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <KpiCard index={0} label="Picks today" value={picks.length} icon={<Target className="h-4 w-4" />} accent="accent" sub={`of ${run.candidates.length} scored stocks`} />
-        <KpiCard index={1} label="Headlines scanned" value={run.stats.headlines} icon={<Newspaper className="h-4 w-4" />} sub={`${run.stats.classified_by_gemini} read by Gemini`} />
-        <KpiCard index={2} label="Stocks with good news" value={run.stats.matched_stocks} icon={<ScanSearch className="h-4 w-4" />} sub="net positive, all of NSE" />
+        <KpiCard
+          index={0}
+          label="Picks today"
+          value={picks.length}
+          icon={<Target className="h-4 w-4" />}
+          accent="accent"
+          visual={<SlotDots filled={picks.length} total={5} />}
+          sub={`of ${run.candidates.length} scored stocks`}
+          onClick={showPicks}
+          cta="View the top picks"
+        />
+        <KpiCard
+          index={1}
+          label="Headlines scanned"
+          value={run.stats.headlines}
+          icon={<Newspaper className="h-4 w-4" />}
+          visual={
+            <MiniStack
+              parts={(Object.entries(run.stats.by_source) as [NewsSource, number][]).map(([k, v], i) => ({
+                label: SOURCE_LABEL[k],
+                value: v,
+                color: c.series[i % c.series.length],
+              }))}
+            />
+          }
+          sub={`${run.stats.classified_by_gemini} read by Gemini`}
+          onClick={() => navigate("/news")}
+          cta="Open the news feed"
+        />
+        <KpiCard
+          index={2}
+          label="Stocks with good news"
+          value={run.stats.matched_stocks}
+          icon={<ScanSearch className="h-4 w-4" />}
+          visual={
+            <MiniStack
+              parts={[
+                { label: "Picks", value: picks.length, color: c.accent },
+                { label: "Watching", value: run.candidates.filter((x) => !x.is_pick && !x.skip_reason).length, color: c.brand },
+                { label: "Skipped", value: run.candidates.filter((x) => x.skip_reason).length, color: c.ink3 },
+              ]}
+            />
+          }
+          sub="picks · watching · skipped"
+          onClick={showCandidates}
+          cta="See all candidates"
+        />
         <KpiCard
           index={3}
           label="Pick hit rate"
@@ -57,18 +121,17 @@ function Radar({ run }: { run: TodayRun }) {
           format={(v) => `${v.toFixed(0)}%`}
           icon={<Activity className="h-4 w-4" />}
           accent="up"
-          sub={
-            tr.picks
-              ? `${tr.pick_hits}/${tr.picks} over ${tr.days} days · others ${tr.other_hit_rate ?? "–"}%`
-              : "builds from the first graded day"
-          }
+          visual={<VersusBars a={tr.pick_hit_rate} b={tr.other_hit_rate} aLabel="Picks" bLabel="Others" />}
+          sub={tr.picks ? `${tr.pick_hits}/${tr.picks} over ${tr.days} days` : "builds from the first graded day"}
+          onClick={() => navigate("/track-record")}
+          cta="Open the track record"
         />
       </div>
 
       <AiBrief brief={run.brief} byGemini={run.stats.classified_by_gemini > 0} />
 
       {/* Picks */}
-      <section>
+      <section id="picks" className="scroll-mt-20">
         <div className="mb-3 flex items-end justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
             <RadarIcon className="h-5 w-5 text-accent" /> Top picks
@@ -76,7 +139,7 @@ function Radar({ run }: { run: TodayRun }) {
           <span className="text-xs text-ink-3">tap a card for the chart and news</span>
         </div>
         {picks.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-3 ${flash ? "flash" : ""}`}>
             {picks.map((c, i) => (
               <PickCard key={c.symbol} c={c} index={i} targetPct={run.target_pct} />
             ))}
@@ -95,7 +158,9 @@ function Radar({ run }: { run: TodayRun }) {
         <NewsMix run={run} />
       </div>
 
-      <CandidatesGrid candidates={run.candidates} />
+      <div id="candidates" className="scroll-mt-20">
+        <CandidatesGrid candidates={run.candidates} />
+      </div>
     </div>
   );
 }

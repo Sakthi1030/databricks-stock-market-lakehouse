@@ -108,3 +108,43 @@ body {
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+
+/* Display face for headings and big numbers: gives the site its own voice. */
+h1, h2, .display {
+  font-family: "Space Grotesk", var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+/* Faint chart-paper grid behind hero panels. */
+.grid-paper {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at 70% 0%, black 30%, transparent 75%);
+}
+
+/* Ticker tape. */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover { animation-play-state: paused; }
+
+/* Market-mood lamp glow. */
+.lamp-on {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent), 0 0 22px 4px color-mix(in srgb, currentColor 55%, transparent);
+}
+
+/* Flash when the picks section is jumped to. */
+@keyframes flash {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  30% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent); }
+}
+.flash > article { animation: flash 1.4s ease-out 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .flash > article { animation: none; }
+}

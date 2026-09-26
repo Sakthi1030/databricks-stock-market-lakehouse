@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { Candidate, IndexQuote } from "../api/types";
 import { catalystLabel, pct, rupees, share, tone } from "../utils/format";
+import type { MarketMood, Mood } from "../utils/mood";
 import { Card, Chip, Segmented, WatchStar } from "./ui";
 import { ScoreBars, ScoreRing, Sparkline } from "./visuals";
 
@@ -247,5 +248,75 @@ export function CandidatesGrid({ candidates }: { candidates: Candidate[] }) {
         />
       </div>
     </Card>
+  );
+}
+
+const LAMP: Record<Mood, string> = { red: "text-down", amber: "text-accent", green: "text-up" };
+
+/** Traffic light for the overall market: is today a day to buy for tomorrow? */
+export function MarketLight({ mood }: { mood: MarketMood }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.1 }}
+      className="flex gap-4 rounded-2xl border border-line bg-panel/80 p-4 backdrop-blur"
+    >
+      <div className="flex shrink-0 flex-col items-center gap-2 rounded-full bg-[#0b1224] px-2 py-2.5 ring-1 ring-white/10">
+        {(["red", "amber", "green"] as Mood[]).map((m) => (
+          <span
+            key={m}
+            className={`h-5 w-5 rounded-full ${LAMP[m]} ${mood.mood === m ? "lamp-on bg-current" : "bg-current opacity-15"}`}
+          />
+        ))}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">Market mood · NIFTY</div>
+        <div className={`display text-xl font-bold ${LAMP[mood.mood]}`}>{mood.headline}</div>
+        <p className="mt-0.5 text-xs leading-relaxed text-ink-2">{mood.advice}</p>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+          {mood.checks.map((c) => (
+            <div key={c.label} className="flex items-center gap-1.5 text-[11px]">
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.ok ? "bg-up" : "bg-down"}`} />
+              <span className="truncate text-ink-3">{c.label}</span>
+              <span className={`num ml-auto font-semibold ${c.ok ? "text-up" : "text-down"}`}>{c.detail}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Scrolling ticker of the indices and every scored stock. */
+export function TickerTape({ indices, candidates }: { indices: Record<string, IndexQuote>; candidates: Candidate[] }) {
+  const items = [
+    ...Object.entries(indices).map(([name, q]) => ({ key: name, label: name, price: q.price, change: q.change_pct, pick: false })),
+    ...candidates.map((c) => ({ key: c.symbol, label: c.symbol, price: c.price ?? 0, change: c.day_change_pct ?? 0, pick: c.is_pick })),
+  ];
+  const row = (dup: boolean) =>
+    items.map((it) => (
+      <Link
+        key={(dup ? "d-" : "") + it.key}
+        to={it.pick || !indices[it.key] ? `/stock/${encodeURIComponent(it.key)}` : "/"}
+        className="flex shrink-0 items-center gap-2 px-4 text-xs"
+        aria-hidden={dup}
+        tabIndex={dup ? -1 : undefined}
+      >
+        {it.pick && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+        <span className="font-mono font-bold text-ink">{it.label}</span>
+        <span className="num text-ink-2">{it.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+        <span className={`num font-semibold ${tone(it.change)}`}>{pct(it.change)}</span>
+      </Link>
+    ));
+  return (
+    <div className="relative -mx-4 overflow-hidden border-y border-line bg-panel/60 py-2 sm:-mx-6">
+      <div className="marquee flex w-max">
+        {row(false)}
+        {row(true)}
+      </div>
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-bg to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-bg to-transparent" />
+    </div>
   );
 }
