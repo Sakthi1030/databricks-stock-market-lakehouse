@@ -10,7 +10,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000, // Gold refreshes once daily via the scheduled Job — no need to refetch every few seconds.
+      staleTime: 60_000, // the radar runs once a day at 2 PM; a minute of staleness is plenty
       retry: 1,
     },
   },

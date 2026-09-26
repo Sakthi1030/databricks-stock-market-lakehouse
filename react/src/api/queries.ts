@@ -1,86 +1,57 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import type {
-  Company,
-  DailyMarketSummary,
-  MoverType,
-  Quote,
-  SectorSummary,
-  TopMover,
+  Analytics,
+  NewsItem,
+  NewsSource,
+  PickPerformance,
+  Served,
+  StockDetail,
+  TodayRun,
+  TrackRecordDay,
 } from "./types";
 
-// Centralized query keys — avoids typo'd cache-key mismatches between components that read
-// the same data and any future code that needs to invalidate/refetch it.
-export const queryKeys = {
-  companies: ["companies"] as const,
-  latestQuotes: ["quotes", "latest"] as const,
-  quoteHistory: (symbol: string, days: number) => ["quotes", "history", symbol, days] as const,
-  latestSummary: ["summary", "latest"] as const,
-  movers: (moverType?: MoverType) => ["movers", moverType ?? "all"] as const,
-  sectors: ["sectors"] as const,
+const get = async <T,>(url: string, params?: object) => (await apiClient.get<Served<T>>(url, { params })).data;
+
+export const keys = {
+  today: ["today"] as const,
+  news: (days: number, source?: NewsSource) => ["news", days, source ?? "all"] as const,
+  trackRecord: ["track-record"] as const,
+  analytics: ["analytics"] as const,
+  history: (days: number) => ["history", days] as const,
+  stock: (symbol: string, range: string) => ["stock", symbol, range] as const,
 };
 
-export function useCompanies() {
-  return useQuery({
-    queryKey: queryKeys.companies,
-    queryFn: async () => (await apiClient.get<Company[]>("/api/companies")).data,
-  });
-}
+export const useToday = () => useQuery({ queryKey: keys.today, queryFn: () => get<TodayRun>("/api/today") });
 
-export function useLatestQuotes() {
-  return useQuery({
-    queryKey: queryKeys.latestQuotes,
-    queryFn: async () => (await apiClient.get<Quote[]>("/api/quotes/latest")).data,
-  });
-}
+export const useNews = (days = 2, source?: NewsSource) =>
+  useQuery({ queryKey: keys.news(days, source), queryFn: () => get<NewsItem[]>("/api/news", { days, source }) });
 
-export function useQuoteHistory(symbol: string, days = 30) {
-  return useQuery({
-    queryKey: queryKeys.quoteHistory(symbol, days),
-    queryFn: async () =>
-      (await apiClient.get<Quote[]>("/api/quotes/history", { params: { symbol, days } })).data,
-    enabled: Boolean(symbol),
-  });
-}
+// Analytics may be served from the raw fallback while the warehouse wakes; refetch soon after
+// so the page upgrades to the Gold marts on its own.
+const upgradeToGold = (query: { state: { data?: Served<unknown> } }) =>
+  query.state.data?.source === "raw" ? 45_000 : false;
 
-// For a fixed, known symbol, useQuoteHistory (a plain useQuery) is the right tool. Here the
-// *number* of symbols varies at runtime (however many the user has selected to compare) —
-// hooks can't be called in a loop for a variable-length list, so useQueries is the
-// purpose-built TanStack Query API for exactly this "N queries where N is dynamic" case.
-export function useMultipleQuoteHistories(symbols: string[], days = 30) {
-  return useQueries({
-    queries: symbols.map((symbol) => ({
-      queryKey: queryKeys.quoteHistory(symbol, days),
-      queryFn: async () =>
-        (await apiClient.get<Quote[]>("/api/quotes/history", { params: { symbol, days } })).data,
-      enabled: Boolean(symbol),
-    })),
+export const useTrackRecord = () =>
+  useQuery({
+    queryKey: keys.trackRecord,
+    queryFn: () => get<TrackRecordDay[]>("/api/track-record"),
+    refetchInterval: upgradeToGold,
   });
-}
 
-export function useLatestSummary(options?: { refetchInterval?: number | false }) {
-  return useQuery({
-    queryKey: queryKeys.latestSummary,
-    queryFn: async () => (await apiClient.get<DailyMarketSummary>("/api/summary/latest")).data,
-    refetchInterval: options?.refetchInterval ?? false,
-  });
-}
+export const useAnalytics = () =>
+  useQuery({ queryKey: keys.analytics, queryFn: () => get<Analytics>("/api/analytics"), refetchInterval: upgradeToGold });
 
-export function useMovers(moverType?: MoverType) {
-  return useQuery({
-    queryKey: queryKeys.movers(moverType),
-    queryFn: async () =>
-      (
-        await apiClient.get<TopMover[]>("/api/movers", {
-          params: moverType ? { mover_type: moverType } : undefined,
-        })
-      ).data,
+export const useHistory = (days = 60) =>
+  useQuery({
+    queryKey: keys.history(days),
+    queryFn: () => get<PickPerformance[]>("/api/history", { days }),
+    refetchInterval: upgradeToGold,
   });
-}
 
-export function useSectors() {
-  return useQuery({
-    queryKey: queryKeys.sectors,
-    queryFn: async () => (await apiClient.get<SectorSummary[]>("/api/sectors")).data,
+export const useStock = (symbol: string, range = "6mo") =>
+  useQuery({
+    queryKey: keys.stock(symbol, range),
+    queryFn: () => get<StockDetail>(`/api/stock/${encodeURIComponent(symbol)}`, { range }),
+    enabled: !!symbol,
   });
-}

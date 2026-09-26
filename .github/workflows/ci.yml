@@ -7,52 +7,39 @@ on:
     branches: [master]
 
 jobs:
-  # Fast, dependency-free sanity net: catches syntax errors across the whole pipeline
-  # (bronze/silver/gold/etl) without needing to install PySpark, which the other jobs
-  # deliberately avoid — the API and its tests never touch Spark, only the ETL scripts do.
-  syntax-check:
+  # The radar pipeline and the API: pure Python, no Spark, fast.
+  python-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Compile-check all Python files
-        run: python -m compileall -q bronze silver gold etl backend
-
-  # Only the API's own tests + the pure-Python parts of etl.utils — deliberately excludes
-  # anything needing a SparkSession, so this stays fast with a minimal (non-PySpark) install.
-  backend-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+          cache: pip
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt pytest==8.2.2 httpx==0.28.1
+        run: pip install -r radar/requirements.txt -r backend/requirements.txt pytest==8.2.2 httpx==0.28.1
+      - name: Compile-check
+        run: python -m compileall -q radar backend lakehouse
       - name: Run tests
-        run: pytest tests/backend/ tests/etl/test_paths.py -v
+        run: pytest tests/radar tests/backend -v
 
-  # Silver/Gold transform logic, run against a real local SparkSession — needs Java and the
-  # full (heavier) requirements.txt, kept as its own job so backend-tests stays fast.
-  pyspark-tests:
+  # Bronze -> Silver -> Gold on a real local Spark + Delta session.
+  lakehouse-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "17"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
+          cache: pip
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r lakehouse/requirements.txt pytest==8.2.2
       - name: Run tests
-        run: pytest tests/etl/test_data_quality.py tests/silver/ tests/gold/ -v
+        run: pytest tests/lakehouse -v
 
   frontend:
     runs-on: ubuntu-latest
@@ -64,13 +51,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
           cache-dependency-path: react/package-lock.json
-      - name: Install dependencies
-        run: npm ci
-      - name: Lint
-        run: npm run lint
-      - name: Unit tests
-        run: npm run test
-      - name: Type-check and build
-        run: npm run build
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build

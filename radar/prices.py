@@ -28,7 +28,8 @@ def fetch_chart(symbol: str, range_: str = "6mo", interval: str = "1d") -> dict:
             continue
         when = datetime.fromtimestamp(ts, IST)
         bars.append({"date": when.date().isoformat(), "time": when.isoformat(),
-                     "open": o, "high": h, "low": l, "close": c, "volume": v or 0})
+                     "open": round(o, 2), "high": round(h, 2), "low": round(l, 2), "close": round(c, 2),
+                     "volume": v or 0})
     return {"meta": result["meta"], "bars": bars}
 
 

@@ -26,15 +26,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center dark:bg-slate-950">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg p-6 text-center">
           <span className="text-5xl">⚠️</span>
           <h1 className="text-xl font-bold">Something broke.</h1>
-          <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
+          <p className="max-w-md text-sm text-ink-2">
             {this.state.error.message}
           </p>
           <button
             onClick={() => window.location.assign("/")}
-            className="rounded-md bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Reload app
           </button>

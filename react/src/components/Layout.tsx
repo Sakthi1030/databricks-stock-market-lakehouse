@@ -1,103 +1,132 @@
-import { useState, type ReactNode } from "react";
+import { BellRing, Code2, Info, Moon, Newspaper, Radar, Sun, Target } from "lucide-react";
+import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { useNow } from "../hooks/useNow";
 import { useTheme } from "../hooks/useTheme";
+import { formatCountdown, marketPhase, msUntilNextAlert } from "../utils/market";
 
-const NAV_LINKS = [
-  { to: "/", label: "Dashboard" },
-  { to: "/companies", label: "Companies" },
-  { to: "/movers", label: "Top Movers" },
-  { to: "/sectors", label: "Sectors" },
-  { to: "/watchlist", label: "Watchlist" },
-  { to: "/compare", label: "Compare" },
+const NAV = [
+  { to: "/", label: "Radar", icon: Radar, end: true },
+  { to: "/news", label: "News", icon: Newspaper },
+  { to: "/track-record", label: "Track record", icon: Target },
+  { to: "/how-it-works", label: "How it works", icon: Info },
 ];
 
-function SunIcon() {
+function Logo() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-    </svg>
+    <div className="flex items-center gap-2.5">
+      <div className="relative h-9 w-9 overflow-hidden rounded-xl bg-[#0b1224] ring-1 ring-white/10">
+        <div className="radar-sweep absolute inset-0 rounded-full" />
+        <div className="absolute inset-[7px] rounded-full border border-sky-900" />
+        <div className="absolute left-[23px] top-[10px] h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+      </div>
+      <div className="leading-tight">
+        <div className="text-sm font-bold tracking-tight text-ink">NSE News Radar</div>
+        <div className="text-[11px] text-ink-3">news → next-day +1%</div>
+      </div>
+    </div>
   );
 }
 
-function MoonIcon() {
+function MarketStatus() {
+  const now = useNow(1000);
+  const phase = marketPhase(now);
+  const label = { open: "Market open", "pre-open": "Pre-open", closed: "Market closed" }[phase];
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-    </svg>
+    <div className="flex items-center gap-2 text-xs sm:gap-3">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel px-2.5 py-1 font-medium text-ink-2">
+        <span className={`live-dot relative h-2 w-2 rounded-full ${phase === "open" ? "text-up bg-up" : "text-ink-3 bg-ink-3"}`} />
+        {label}
+      </span>
+      <span
+        className="hidden items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 font-medium text-accent sm:inline-flex"
+        title="The email goes out at 2:00 PM IST on trading days"
+      >
+        <BellRing className="h-3.5 w-3.5" />
+        <span className="num">Next alert in {formatCountdown(msUntilNextAlert(now))}</span>
+      </span>
+    </div>
   );
 }
 
-function MenuIcon() {
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-6 w-6">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-    </svg>
+    <button
+      onClick={toggleTheme}
+      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      className="rounded-lg border border-line bg-panel p-2 text-ink-2 transition hover:text-ink"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
   );
 }
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { theme, toggleTheme } = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-      isActive
-        ? "bg-brand-blue text-white"
-        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-    }`;
-
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-brand-blue">📈 Stock Lakehouse</span>
-          </div>
-
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} className={linkClass} end={link.to === "/"}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle dark mode"
-              className="rounded-md p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+    <div className="min-h-screen lg:pl-60">
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-panel/80 px-4 py-5 backdrop-blur lg:flex">
+        <Logo />
+        <nav className="mt-8 space-y-1">
+          {NAV.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                  isActive ? "bg-brand/10 text-brand" : "text-ink-2 hover:bg-panel-2 hover:text-ink"
+                }`
+              }
             >
-              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-            </button>
-            <button
-              onClick={() => setMobileOpen((prev) => !prev)}
-              aria-label="Toggle menu"
-              className="rounded-md p-2 text-slate-600 hover:bg-slate-100 md:hidden dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              <MenuIcon />
-            </button>
-          </div>
+              <Icon className="h-4 w-4" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="mt-auto space-y-3 rounded-xl border border-line bg-panel-2 p-3 text-[11px] leading-relaxed text-ink-3">
+          <p>Signals from public news, not investment advice. Always use a stop-loss.</p>
+          <a
+            href="https://github.com/Sakthi1030/databricks-stock-market-lakehouse"
+            className="inline-flex items-center gap-1.5 font-medium text-ink-2 hover:text-ink"
+          >
+            <Code2 className="h-3.5 w-3.5" /> Source on GitHub
+          </a>
         </div>
+      </aside>
 
-        {mobileOpen && (
-          <nav className="flex flex-col gap-1 border-t border-slate-200 p-3 md:hidden dark:border-slate-800">
-            {NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={linkClass}
-                end={link.to === "/"}
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
+      {/* Top bar */}
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-bg/80 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="lg:hidden">
+          <Logo />
+        </div>
+        <div className="hidden lg:block" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <MarketStatus />
+          <ThemeToggle />
+        </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 pb-28 pt-5 sm:px-6 lg:pb-12">{children}</main>
+
+      {/* Mobile tab bar */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-panel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+        {NAV.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${isActive ? "text-brand" : "text-ink-3"}`
+            }
+          >
+            <Icon className="h-5 w-5" />
+            {label.split(" ")[0]}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

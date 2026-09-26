@@ -1,41 +1,36 @@
-"""FastAPI backend serving the Gold layer to the React frontend.
+"""FastAPI backend for the NSE News Radar site.
 
-Reads directly from the same Databricks SQL Warehouse Power BI connects to — Gold is the
-single source of truth for both, so the two never drift out of sync with each other.
+Today's picks come straight from the raw zone (the 2 PM run's output); history and analytics
+come from the Databricks Gold marts, falling back to the same numbers computed from the raw zone
+whenever the warehouse is asleep. Every response says which path served it.
 """
 import os
+import re
+import time
 from typing import Optional
 
-from databricks.sql import exc as sql_exc
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
-from backend.db import run_query
-from backend.schemas import Company, DailyMarketSummary, Quote, SectorSummary, TopMover
+from backend import db, raw
+from radar.prices import fetch_chart
 
-load_dotenv()
+app = FastAPI(title="NSE News Radar API", version="2.0.0")
 
-app = FastAPI(title="Stock Market Lakehouse API", version="1.0.0")
-
-# ALLOWED_ORIGINS is a comma-separated list set per-environment (e.g. the deployed Vercel URL
-# in production) — defaults to local dev ports so nothing extra is needed to run this locally.
 default_origins = "http://localhost:5173,http://localhost:3000"
-allowed_origins = os.environ.get("ALLOWED_ORIGINS", default_origins).split(",")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", default_origins).split(","),
     allow_methods=["GET"],
     allow_headers=["*"],
 )
 
+SYMBOL = re.compile(r"^[A-Z0-9&\-]{1,20}$")
+_charts: dict[str, tuple[float, dict]] = {}
 
-@app.exception_handler(sql_exc.Error)
-def databricks_unavailable(request: Request, exc: sql_exc.Error):
-    # Return a clear 503 instead of a bare 500 so the frontend can show "data source unavailable".
-    return JSONResponse(status_code=503, content={"detail": "Databricks SQL Warehouse is unavailable. Try again shortly."})
+
+def served(data, source: str) -> dict:
+    return {"source": source, "data": data}
 
 
 @app.get("/health")
@@ -43,78 +38,75 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/api/companies", response_model=list[Company])
-def get_companies():
-    return run_query("SELECT * FROM workspace.default.dim_company ORDER BY name")
+@app.get("/api/today")
+def today():
+    run = raw.latest()
+    if not run:
+        raise HTTPException(status_code=404, detail="No radar run yet")
+    return served({k: v for k, v in run.items() if k != "news"}, "raw")
 
 
-@app.get("/api/quotes/latest", response_model=list[Quote])
-def get_latest_quotes():
-    query = """
-        SELECT symbol, ingestion_date, current_price, price_change, pct_change,
-               day_high, day_low, day_open, previous_close, daily_range
-        FROM workspace.default.fact_daily_quotes
-        WHERE ingestion_date = (SELECT MAX(ingestion_date) FROM workspace.default.fact_daily_quotes)
-        ORDER BY pct_change DESC
-    """
-    return run_query(query)
+@app.get("/api/news")
+def news(symbol: Optional[str] = None, source: Optional[str] = None, days: int = Query(default=2, ge=1, le=30)):
+    rows = raw.news()
+    dates = sorted({n["date"] for n in rows})[-days:]
+    rows = [n for n in rows if n["date"] in dates]
+    if symbol:
+        rows = [n for n in rows if symbol.upper() in (n.get("symbols") or [])]
+    if source:
+        rows = [n for n in rows if n["source"] == source]
+    return served(sorted(rows, key=lambda n: n["published"], reverse=True)[:400], "raw")
 
 
-@app.get("/api/quotes/history", response_model=list[Quote])
-def get_quote_history(symbol: str, days: int = 30):
-    # `symbol` is user-supplied — always parameterized, never string-interpolated into SQL.
-    # `days` is safe to interpolate directly: FastAPI's `int` type hint already rejects any
-    # non-integer value before this function body ever runs.
-    query = f"""
-        SELECT symbol, ingestion_date, current_price, price_change, pct_change,
-               day_high, day_low, day_open, previous_close, daily_range
-        FROM workspace.default.fact_daily_quotes
-        WHERE symbol = :symbol
-        ORDER BY ingestion_date DESC
-        LIMIT {days}
-    """
-    rows = run_query(query, {"symbol": symbol})
-    if not rows:
-        raise HTTPException(status_code=404, detail=f"No data found for symbol '{symbol}'")
-    return rows
+@app.get("/api/track-record")
+def track_record():
+    rows = db.gold(f"SELECT * FROM {db.SCHEMA}.gold_track_record_daily ORDER BY trade_date")
+    if rows is not None:
+        return served(rows, "databricks")
+    return served(raw.track_record_daily(raw.pick_performance()), "raw")
 
 
-@app.get("/api/summary/latest", response_model=DailyMarketSummary)
-def get_latest_summary():
-    query = """
-        SELECT ingestion_date, num_companies, avg_pct_change, num_gainers, num_losers,
-               avg_daily_range, best_pct_change, worst_pct_change
-        FROM workspace.default.daily_market_summary
-        ORDER BY ingestion_date DESC
-        LIMIT 1
-    """
-    rows = run_query(query)
-    if not rows:
-        raise HTTPException(status_code=404, detail="No summary data available")
-    return rows[0]
+@app.get("/api/analytics")
+def analytics():
+    parts = {name: db.gold(f"SELECT * FROM {db.SCHEMA}.gold_hit_rate_{name}")
+             for name in ("by_catalyst", "by_score_band", "by_source")}
+    if all(v is not None for v in parts.values()):
+        return served(parts, "databricks")
+    return served(raw.analytics(raw.pick_performance(), raw.news()), "raw")
 
 
-@app.get("/api/movers", response_model=list[TopMover])
-def get_top_movers(mover_type: Optional[str] = Query(default=None, pattern="^(gainer|loser)$")):
-    query = """
-        SELECT ingestion_date, mover_type, rank, symbol, name, industry, pct_change, current_price
-        FROM workspace.default.top_movers
-        WHERE ingestion_date = (SELECT MAX(ingestion_date) FROM workspace.default.top_movers)
-    """
-    parameters = None
-    if mover_type:
-        query += " AND mover_type = :mover_type"
-        parameters = {"mover_type": mover_type}
-    query += " ORDER BY mover_type, rank"
-    return run_query(query, parameters)
+@app.get("/api/history")
+def history(days: int = Query(default=60, ge=1, le=365)):
+    rows = db.gold(f"SELECT * FROM {db.SCHEMA}.gold_pick_performance "
+                   f"WHERE trade_date >= date_sub(current_date(), {days}) ORDER BY trade_date DESC, rank")
+    if rows is not None:
+        return served(rows, "databricks")
+    perf = raw.pick_performance()
+    dates = set(sorted({r["trade_date"] for r in perf})[-days:])
+    rows = [r for r in perf if r["trade_date"] in dates]
+    return served(sorted(rows, key=lambda r: (r["trade_date"], -(r["rank"] or 0)), reverse=True), "raw")
 
 
-@app.get("/api/sectors", response_model=list[SectorSummary])
-def get_sectors():
-    query = """
-        SELECT ingestion_date, industry, num_companies, avg_pct_change, total_market_cap_musd
-        FROM workspace.default.sector_summary
-        WHERE ingestion_date = (SELECT MAX(ingestion_date) FROM workspace.default.sector_summary)
-        ORDER BY avg_pct_change DESC
-    """
-    return run_query(query)
+@app.get("/api/stock/{symbol}")
+def stock(symbol: str, range: str = Query(default="6mo", pattern="^(1mo|3mo|6mo|1y)$")):
+    symbol = symbol.upper()
+    if not SYMBOL.match(symbol):
+        raise HTTPException(status_code=400, detail="Invalid symbol")
+    key = f"{symbol}:{range}"
+    hit = _charts.get(key)
+    if not hit or time.time() - hit[0] > 300:
+        try:
+            hit = _charts[key] = (time.time(), fetch_chart(symbol, range_=range))
+        except Exception:
+            raise HTTPException(status_code=404, detail=f"No price data for '{symbol}'")
+    chart = hit[1]
+    appearances = [r for r in raw.pick_performance() if r["symbol"] == symbol]
+    return served({
+        "symbol": symbol,
+        "name": next((r["name"] for r in appearances), chart["meta"].get("longName") or symbol),
+        "price": chart["meta"].get("regularMarketPrice"),
+        "bars": chart["bars"],
+        "appearances": sorted(appearances, key=lambda r: r["trade_date"], reverse=True),
+        "news": sorted((n for n in raw.news() if symbol in (n.get("symbols") or [])),
+                       key=lambda n: n["published"], reverse=True)[:40],
+    }, "raw")

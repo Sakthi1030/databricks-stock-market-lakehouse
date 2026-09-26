@@ -1,12 +1,13 @@
-"""Databricks SQL Warehouse connection — the same warehouse Power BI connects to.
+"""Databricks SQL Warehouse access, with a time budget so a sleeping warehouse never blocks a page.
 
-A new connection per request is deliberate, not an oversight: this is a small personal
-project with light traffic, so the simplicity of "connect, query, close" outweighs the
-cost of connection pooling. The real cost worth knowing about is the warehouse itself —
-Databricks SQL Warehouses auto-stop after inactivity, so the first request after a while
-can take 10-30s to wake it back up. Everything after that is fast.
+Free Edition serverless warehouses stop when idle and take ~35s to start. A query that misses
+its budget keeps running in the background (waking the warehouse), the caller serves the raw
+fallback now, and the next request, a few seconds later, gets Gold from cache or a warm warehouse.
 """
+import logging
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
@@ -14,27 +15,27 @@ from typing import Any, Optional
 from databricks import sql
 from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+log = logging.getLogger(__name__)
+
+SCHEMA = "workspace.nse_radar"
+CACHE_SECONDS = 600          # Gold changes twice a day; ten minutes of staleness is fine
+_pool = ThreadPoolExecutor(max_workers=4)
+_cache: dict[str, tuple[float, list[dict]]] = {}
+_inflight: dict[str, Any] = {}
+
+
+def configured() -> bool:
+    return all(os.environ.get(k) for k in ("DATABRICKS_HOST", "DATABRICKS_HTTP_PATH", "DATABRICKS_TOKEN"))
 
 
 @contextmanager
 def get_connection():
-    host = os.environ.get("DATABRICKS_HOST")
-    http_path = os.environ.get("DATABRICKS_HTTP_PATH")
-    token = os.environ.get("DATABRICKS_TOKEN")
-    if not all([host, http_path, token]):
-        raise EnvironmentError(
-            "DATABRICKS_HOST, DATABRICKS_HTTP_PATH, and DATABRICKS_TOKEN must all be set in .env"
-        )
-
-    # The connector's default retry policy keeps retrying a failed connection for up to 15 minutes,
-    # which leaves the dashboard spinning. Cap it so a paused or unreachable warehouse fails in
-    # two minutes; that still leaves room for a normal serverless warehouse cold start (~35s).
+    # The connector's default retry policy keeps retrying for up to 15 minutes; cap it at two.
     connection = sql.connect(
-        server_hostname=host,
-        http_path=http_path,
-        access_token=token,
+        server_hostname=os.environ["DATABRICKS_HOST"],
+        http_path=os.environ["DATABRICKS_HTTP_PATH"],
+        access_token=os.environ["DATABRICKS_TOKEN"],
         _retry_stop_after_attempts_count=4,
         _retry_stop_after_attempts_duration=120,
         _socket_timeout=60,
@@ -51,3 +52,25 @@ def run_query(query: str, parameters: Optional[dict[str, Any]] = None) -> list[d
             cursor.execute(query, parameters)
             columns = [col[0] for col in cursor.description]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def gold(query: str, budget_seconds: float = 12) -> Optional[list[dict]]:
+    """Cached Gold query result, or None if the warehouse can't answer within the budget."""
+    if not configured():
+        return None
+    hit = _cache.get(query)
+    if hit and time.time() - hit[0] < CACHE_SECONDS:
+        return hit[1]
+    future = _inflight.get(query)
+    if future is None or future.done():
+        future = _inflight[query] = _pool.submit(run_query, query)
+    try:
+        rows = future.result(timeout=budget_seconds)
+    except FutureTimeout:
+        log.info("Warehouse still waking; serving the raw fallback for now")
+        return None
+    except Exception as exc:
+        log.warning("Gold query failed: %s", exc)
+        return None
+    _cache[query] = (time.time(), rows)
+    return rows
