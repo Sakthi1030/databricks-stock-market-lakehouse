@@ -36,11 +36,11 @@ def track_record_daily(perf: DataFrame) -> DataFrame:
         F.round(F.avg(F.when(F.col("is_pick"), F.col("max_gain_pct"))), 2).alias("pick_avg_max_gain_pct"),
     )
     w = Window.orderBy("trade_date").rowsBetween(-19, 0)
+    rate = lambda hits, n: F.when(n > 0, F.round(100 * hits / n, 1))   # null when there were none
     return (daily
-            .withColumn("pick_hit_rate", F.round(100 * F.col("pick_hits") / F.nullif(F.col("picks"), F.lit(0)), 1))
-            .withColumn("other_hit_rate", F.round(100 * F.col("other_hits") / F.nullif(F.col("others"), F.lit(0)), 1))
-            .withColumn("rolling_20d_pick_hit_rate",
-                        F.round(100 * F.sum("pick_hits").over(w) / F.nullif(F.sum("picks").over(w), F.lit(0)), 1))
+            .withColumn("pick_hit_rate", rate(F.col("pick_hits"), F.col("picks")))
+            .withColumn("other_hit_rate", rate(F.col("other_hits"), F.col("others")))
+            .withColumn("rolling_20d_pick_hit_rate", rate(F.sum("pick_hits").over(w), F.sum("picks").over(w)))
             .orderBy("trade_date"))
 
 
