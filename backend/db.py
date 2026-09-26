@@ -28,7 +28,17 @@ def get_connection():
             "DATABRICKS_HOST, DATABRICKS_HTTP_PATH, and DATABRICKS_TOKEN must all be set in .env"
         )
 
-    connection = sql.connect(server_hostname=host, http_path=http_path, access_token=token)
+    # The connector's default retry policy keeps retrying a failed connection for up to 15 minutes,
+    # which leaves the dashboard spinning. Cap it so a paused or unreachable warehouse fails in
+    # two minutes; that still leaves room for a normal serverless warehouse cold start (~35s).
+    connection = sql.connect(
+        server_hostname=host,
+        http_path=http_path,
+        access_token=token,
+        _retry_stop_after_attempts_count=4,
+        _retry_stop_after_attempts_duration=120,
+        _socket_timeout=60,
+    )
     try:
         yield connection
     finally:

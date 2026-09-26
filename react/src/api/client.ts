@@ -6,5 +6,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 export const apiClient = axios.create({
   baseURL,
-  timeout: 15_000,
+  // Free-tier cold start: Render wakes the API (~30-50s), then Databricks starts the warehouse (~35s).
+  timeout: 120_000,
 });

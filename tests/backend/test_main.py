@@ -92,3 +92,15 @@ def test_summary_not_found_returns_404(mock_run_query):
     mock_run_query.return_value = []
     response = client.get("/api/summary/latest")
     assert response.status_code == 404
+
+
+@patch("backend.main.run_query")
+def test_warehouse_unavailable_returns_503(mock_run_query):
+    from databricks.sql.exc import RequestError
+
+    mock_run_query.side_effect = RequestError("Error during request to server")
+
+    response = client.get("/api/sectors")
+
+    assert response.status_code == 503
+    assert "unavailable" in response.json()["detail"]

@@ -6,9 +6,11 @@ single source of truth for both, so the two never drift out of sync with each ot
 import os
 from typing import Optional
 
+from databricks.sql import exc as sql_exc
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.db import run_query
 from backend.schemas import Company, DailyMarketSummary, Quote, SectorSummary, TopMover
@@ -28,6 +30,12 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(sql_exc.Error)
+def databricks_unavailable(request: Request, exc: sql_exc.Error):
+    # Return a clear 503 instead of a bare 500 so the frontend can show "data source unavailable".
+    return JSONResponse(status_code=503, content={"detail": "Databricks SQL Warehouse is unavailable. Try again shortly."})
 
 
 @app.get("/health")

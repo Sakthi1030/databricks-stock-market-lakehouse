@@ -21,7 +21,7 @@ export function Dashboard() {
   const gainers = useMovers("gainer");
   const losers = useMovers("loser");
 
-  if (summary.isPending) return <LoadingSpinner label="Loading market summary..." />;
+  if (summary.isPending) return <LoadingSpinner label="Loading market summary... the first load can take up to a minute while the data warehouse wakes up." />;
   if (summary.isError)
     return (
       <ErrorState
