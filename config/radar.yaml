@@ -1,0 +1,74 @@
+# NSE News Radar: which stocks have fresh positive news at 2 PM, and are likely to reach
+# +1% the next trading day (buy in delivery before the close, sell at the target).
+
+timezone: Asia/Kolkata
+target_pct: 1.0             # the next-day gain you aim to exit at
+snapshot_time: "13:58"      # IST; the run waits until this time before taking prices
+news_window_hours: 30       # headlines older than this are ignored
+top_n: 5                    # picks in the 2 PM email
+watchlist_n: 20             # scored candidates shown on the website
+
+# Liquidity and risk guards, applied to every NSE stock.
+min_traded_value_cr: 1.0    # 20-day average traded value, in Rs crore; below this, exits at +1% get hard
+max_day_change_pct: 6.0     # already up this much by 2 PM = chasing; skipped
+min_price: 10.0             # skip penny stocks
+min_news_score: 20          # a pick needs at least this much news behind it
+series: [EQ, BE]            # NSE series to include (BE = trade-to-trade, delivery only)
+
+# Composite score weights (sum to 1).
+weights:
+  news: 0.45                # sentiment x impact x source trust, decayed by age
+  reach: 0.25               # how often this stock's next-day high was >= +1% over the last 120 days
+  momentum: 0.15            # today's move so far: positive but not overextended
+  volume: 0.15              # today's volume vs its 20-day average, adjusted for time of day
+
+# How much each source's news counts (official filings count most, Reddit least).
+source_weights:
+  nse: 1.0
+  rss: 0.8
+  google_news: 0.7
+  reddit: 0.5
+
+rss_feeds:
+  Economic Times: https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms
+  Business Standard: https://www.business-standard.com/rss/markets-106.rss
+  Livemint: https://www.livemint.com/rss/markets
+  Business Today: https://www.businesstoday.in/rssfeeds/?id=225346
+
+# Google News searches (Moneycontrol and Times Now block direct feed access, so they come via here).
+google_news_queries:
+  Moneycontrol: site:moneycontrol.com stocks to buy OR shares surge OR order win
+  Times Now: site:timesnownews.com stock market shares
+  Order wins: NSE shares order win OR bags order OR contract
+  Results: quarterly results profit jumps shares NSE
+  Upgrades: brokerage upgrade target price shares India
+
+subreddits: [IndianStreetBets, IndianStockMarket, StockMarketIndia]
+
+# NSE filing categories that are routine and never move a price.
+nse_skip_categories:
+  - Trading Window
+  - Shareholders meeting
+  - Copy of Newspaper Publication
+  - Analysts/Institutional Investor Meet/Con. Call Updates
+  - Appointment
+  - Resignation of Director/KMP/SMP
+  - Change in Director(s)
+  - Change in Management
+  - Certificate under SEBI (Depositories and Participants) Regulations, 2018
+  - Loss of Share Certificates
+  - Duplicate Share Certificate
+  - Book Closure
+  - Record Date
+  - Compliance Certificate
+  - Statement of deviation(s) or variation(s) under Reg. 32
+  - ESOP/ESOS/ESPS
+  - Investor Complaints
+  - Change in Registrar and Share Transfer Agent
+  - Notice Of Shareholders Meetings-XBRL
+
+gemini:
+  model: gemini-flash-lite-latest
+  batch_size: 40           # headlines per request
+  delay_seconds: 4         # free-tier rate limit
+  max_items: 480           # cap per run (12 requests)
