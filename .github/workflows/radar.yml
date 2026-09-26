@@ -71,6 +71,7 @@ jobs:
           python -m radar "$MODE" --data-dir radar-data $ARGS
 
       - name: Commit the data
+        if: ${{ !cancelled() }}   # keep the picks even if the email step failed
         working-directory: radar-data
         run: |
           git config user.name "radar-bot"
