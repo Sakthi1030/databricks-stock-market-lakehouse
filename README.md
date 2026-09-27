@@ -23,9 +23,9 @@ flowchart LR
       D[Reddit: IndianStreetBets +2]
     end
     subgraph "GitHub Actions (trading days)"
-      P[Python radar<br/>13:30 collect → 13:58 prices → 14:00 email]
+      P[Python radar<br/>13:07 collect → 13:58 prices → 14:00 email]
       M[Gemini<br/>stocks · sentiment · impact · catalyst]
-      O[15:45 grade yesterday's picks]
+      O[15:52 grade yesterday's picks]
     end
     Sources --> P
     P <--> M
@@ -81,7 +81,7 @@ real test of the score.
 | `databricks/notebooks/` | The three job tasks, each one call into `lakehouse.pipeline` |
 | `backend/` | FastAPI: Gold via the SQL Warehouse with a time budget, raw-zone fallback |
 | `react/` | The site: React 19, Tailwind 4, ECharts, AG Grid, Framer Motion |
-| `.github/workflows/radar.yml` | The schedule: 13:30 IST run, 15:45 IST grading |
+| `.github/workflows/radar.yml` | The schedule: 13:07 IST run, 15:52 IST grading |
 
 ## Running it
 

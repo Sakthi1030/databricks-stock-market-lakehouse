@@ -2,8 +2,8 @@ name: NSE News Radar
 
 on:
   schedule:
-    - cron: "0 8 * * 1-5"     # 13:30 IST: read the news, wait for 13:58, email the picks by ~14:00
-    - cron: "15 10 * * 1-5"   # 15:45 IST: after the close, grade the previous day's picks
+    - cron: "37 7 * * 1-5"    # 13:07 IST: read the news, wait for 13:58, email by ~14:00 (early start absorbs GitHub delays)
+    - cron: "22 10 * * 1-5"   # 15:52 IST: after the close, grade the previous day's picks
   workflow_dispatch:
     inputs:
       mode:
@@ -58,7 +58,7 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "15 10 * * 1-5" ]; then MODE=outcomes; else MODE=run; fi
+            if [ "${{ github.event.schedule }}" = "22 10 * * 1-5" ]; then MODE=outcomes; else MODE=run; fi
             ARGS="--send"
           else
             MODE="${{ inputs.mode }}"

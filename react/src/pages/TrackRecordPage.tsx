@@ -54,7 +54,7 @@ export function TrackRecordPage() {
       {graded.length === 0 ? (
         <Card>
           <EmptyState icon={<Hourglass className="h-6 w-6" />} title="The first results arrive after the next close">
-            Picks are graded at 3:45 PM on the following trading day. This page fills in on its own from then on:
+            Picks are graded at 3:52 PM on the following trading day. This page fills in on its own from then on:
             daily hit rates, a calendar, and which scores, sources and catalysts actually worked.
           </EmptyState>
         </Card>

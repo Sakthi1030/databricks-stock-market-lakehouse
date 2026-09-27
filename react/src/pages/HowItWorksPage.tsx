@@ -49,11 +49,11 @@ function Stage({ n, title, children }: { n: number; title: string; children: Rea
 }
 
 const TIMELINE = [
-  { time: "1:30 PM", title: "Read the news", text: "NSE filings, Economic Times, Business Standard, Livemint, Business Today, Moneycontrol and Times Now (via Google News), and three Indian stock subreddits." },
-  { time: "1:35 PM", title: "Gemini reads every headline", text: "Which NSE companies it is about, bullish or bearish, how big the likely next-day effect is, and the catalyst type." },
+  { time: "1:07 PM", title: "Read the news", text: "NSE filings, Economic Times, Business Standard, Livemint, Business Today, Moneycontrol and Times Now (via Google News), and three Indian stock subreddits." },
+  { time: "1:10 PM", title: "Gemini reads every headline", text: "Which NSE companies it is about, bullish or bearish, how big the likely next-day effect is, and the catalyst type." },
   { time: "1:58 PM", title: "Price snapshot", text: "Live price, today's move, volume vs normal, liquidity, and how often this stock's next-day high has reached +1%." },
   { time: "2:00 PM", title: "Email with the picks", text: "Top five by score, each with the +1% sell target and the headlines behind it." },
-  { time: "3:45 PM", title: "Grade yesterday", text: "Did yesterday's picks, and every other candidate, reach +1% today? The answer feeds the track record." },
+  { time: "3:52 PM", title: "Grade yesterday", text: "Did yesterday's picks, and every other candidate, reach +1% today? The answer feeds the track record." },
   { time: "4:00 PM", title: "Databricks refresh", text: "Bronze, Silver and Gold Delta tables rebuild from the raw zone; the site's analytics read Gold." },
 ];
 
