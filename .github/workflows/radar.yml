@@ -19,6 +19,10 @@ on:
         description: "Run even if NSE is closed today (uses the last session's prices)"
         type: boolean
         default: false
+      scheduled:
+        description: "Behave like the scheduled run: wait for the 13:58 snapshot and email the picks (used by the external timer)"
+        type: boolean
+        default: false
 
 concurrency:
   group: radar
@@ -59,6 +63,9 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
             if [ "${{ github.event.schedule }}" = "22 10 * * 1-5" ]; then MODE=outcomes; else MODE=run; fi
+            ARGS="--send"
+          elif [ "${{ inputs.scheduled }}" = "true" ]; then
+            MODE="${{ inputs.mode }}"
             ARGS="--send"
           else
             MODE="${{ inputs.mode }}"
